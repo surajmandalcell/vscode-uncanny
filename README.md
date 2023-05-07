@@ -1,4 +1,4 @@
-# [Incredibly In Your Face](https://marketplace.visualstudio.com/items?itemName=surajmandalcell.uncanny-mrincredible)
+# [Uncanny Mr. Incredible](https://marketplace.visualstudio.com/items?itemName=surajmandalcell.uncanny-mrincredible)
 
 This extension is a fork of incredibles-in-your-face vscode extension by virejdasani. I have made it so that the face is floating in the editor window instead of sidebar since I wanted my sidebar to be clean.
 
