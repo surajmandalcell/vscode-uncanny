@@ -152,7 +152,7 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 class CustomSidebarViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = "in-your-face.openview";
+  public static readonly viewType = "uncanny-mrincredible.openview";
 
   private _view?: vscode.WebviewView;
 
