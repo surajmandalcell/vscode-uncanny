@@ -1,17 +1,7 @@
-// A lot of the code used to make this extension is from the following repos:
-// https://github.com/phindle/error-lens/blob/master/src/extension.ts
-// https://github.com/microsoft/vscode-extension-samples/tree/main/webview-sample
-// https://github.com/microsoft/vscode-extension-samples/tree/main/webview-view-sample
-// https://code.visualstudio.com/api/extension-guides/webview
-// and more that I can't find anymore
-
 "use strict";
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+
 import * as vscode from "vscode";
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   console.log("Extension activated");
 
@@ -27,10 +17,6 @@ export function activate(context: vscode.ExtensionContext) {
   let _statusBarItem: vscode.StatusBarItem;
   let errorLensEnabled: boolean = true;
 
-  // Use the console to output diagnostic information (console.log) and errors (console.error)
-  // console.log('Visual Studio Code Extension "errorlens" is now active');
-
-  // Commands are defined in the package.json file
   let disposableEnableErrorLens = vscode.commands.registerCommand(
     "ErrorLens.enable",
     () => {
@@ -69,7 +55,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions
   );
 
-  // Note: URIs for onDidOpenTextDocument() can contain schemes other than file:// (such as git://)
   vscode.workspace.onDidOpenTextDocument(
     (textDocument) => {
       updateDecorationsForUri(textDocument.uri);
@@ -78,7 +63,6 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions
   );
 
-  // Update on editor switch.
   vscode.window.onDidChangeActiveTextEditor(
     (textEditor) => {
       if (textEditor === undefined) {
@@ -103,9 +87,7 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // Many URIs can change - we only need to decorate the active text editor
     for (const uri of diagnosticChangeEvent.uris) {
-      // Only update decorations for the active text editor.
       if (uri.fsPath === activeTextEditor.document.uri.fsPath) {
         updateDecorationsForUri(uri);
         break;
@@ -118,7 +100,6 @@ export function activate(context: vscode.ExtensionContext) {
       return;
     }
 
-    // Only process "file://" URIs.
     if (uriToDecorate.scheme !== "file") {
       return;
     }
@@ -144,16 +125,12 @@ export function activate(context: vscode.ExtensionContext) {
       let aggregatedDiagnostics: any = {};
       let diagnostic: vscode.Diagnostic;
 
-      // Iterate over each diagnostic that VS Code has reported for this file. For each one, add to
-      // a list of objects, grouping together diagnostics which occur on a single line.
       for (diagnostic of vscode.languages.getDiagnostics(uriToDecorate)) {
         let key = "line" + diagnostic.range.start.line;
 
         if (aggregatedDiagnostics[key]) {
-          // Already added an object for this key, so augment the arrayDiagnostics[] array.
           aggregatedDiagnostics[key].arrayDiagnostics.push(diagnostic);
         } else {
-          // Create a new object for this key, specifying the line: and a arrayDiagnostics[] array
           aggregatedDiagnostics[key] = {
             line: diagnostic.range.start.line,
             arrayDiagnostics: [diagnostic],
@@ -168,8 +145,6 @@ export function activate(context: vscode.ExtensionContext) {
           case 1:
             numWarnings += 1;
             break;
-
-          // Ignore other severities.
         }
       }
     }
@@ -191,15 +166,12 @@ class CustomSidebarViewProvider implements vscode.WebviewViewProvider {
     this._view = webviewView;
 
     webviewView.webview.options = {
-      // Allow scripts in the webview
       enableScripts: true,
       localResourceRoots: [this._extensionUri],
     };
 
-    // default webview will show doom face 0
     webviewView.webview.html = this.getHtmlContent0(webviewView.webview);
 
-    // This is called every second is decides which doom face to show in the webview
     setInterval(() => {
       let errors = getNumErrors();
       if (errors === 0) {
@@ -214,7 +186,6 @@ class CustomSidebarViewProvider implements vscode.WebviewViewProvider {
     }, 1000);
   }
 
-  // This is doom face 0
   private getHtmlContent0(webview: vscode.Webview): string {
     const stylesheetUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "assets", "main.css")
@@ -227,7 +198,6 @@ class CustomSidebarViewProvider implements vscode.WebviewViewProvider {
     return getHtml(face0);
   }
 
-  // This is doom face 1
   private getHtmlContent1(webview: vscode.Webview): string {
     const stylesheetUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "assets", "main.css")
@@ -240,7 +210,6 @@ class CustomSidebarViewProvider implements vscode.WebviewViewProvider {
     return getHtml(face1);
   }
 
-  // This is doom face 2
   private getHtmlContent2(webview: vscode.Webview): string {
     const stylesheetUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "assets", "main.css")
@@ -253,7 +222,6 @@ class CustomSidebarViewProvider implements vscode.WebviewViewProvider {
     return getHtml(face2);
   }
 
-  // This is doom face 3
   private getHtmlContent3(webview: vscode.Webview): string {
     const stylesheetUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "assets", "main.css")
@@ -286,7 +254,6 @@ function getHtml(doomFace: any) {
   `;
 }
 
-// function to get the number of errors in the open file
 function getNumErrors(): number {
   const activeTextEditor: vscode.TextEditor | undefined =
     vscode.window.activeTextEditor;
@@ -301,16 +268,12 @@ function getNumErrors(): number {
   let aggregatedDiagnostics: any = {};
   let diagnostic: vscode.Diagnostic;
 
-  // Iterate over each diagnostic that VS Code has reported for this file. For each one, add to
-  // a list of objects, grouping together diagnostics which occur on a single line.
   for (diagnostic of vscode.languages.getDiagnostics(document.uri)) {
     let key = "line" + diagnostic.range.start.line;
 
     if (aggregatedDiagnostics[key]) {
-      // Already added an object for this key, so augment the arrayDiagnostics[] array.
       aggregatedDiagnostics[key].arrayDiagnostics.push(diagnostic);
     } else {
-      // Create a new object for this key, specifying the line: and a arrayDiagnostics[] array
       aggregatedDiagnostics[key] = {
         line: diagnostic.range.start.line,
         arrayDiagnostics: [diagnostic],
@@ -325,13 +288,10 @@ function getNumErrors(): number {
       case 1:
         numWarnings += 1;
         break;
-
-      // Ignore other severities.
     }
   }
 
   return numErrors;
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {}
