@@ -15,33 +15,23 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   let _statusBarItem: vscode.StatusBarItem;
-  let errorLensEnabled: boolean = true;
+  let errorLensEnabled = true;
 
-  let disposableEnableErrorLens = vscode.commands.registerCommand(
+  const disposableEnableErrorLens = vscode.commands.registerCommand(
     "ErrorLens.enable",
     () => {
       errorLensEnabled = true;
-
-      const activeTextEditor: vscode.TextEditor | undefined =
-        vscode.window.activeTextEditor;
-      if (activeTextEditor) {
-        updateDecorationsForUri(activeTextEditor.document.uri);
-      }
+      updateDecorationsForActiveEditor();
     }
   );
 
   context.subscriptions.push(disposableEnableErrorLens);
 
-  let disposableDisableErrorLens = vscode.commands.registerCommand(
+  const disposableDisableErrorLens = vscode.commands.registerCommand(
     "ErrorLens.disable",
     () => {
       errorLensEnabled = false;
-
-      const activeTextEditor: vscode.TextEditor | undefined =
-        vscode.window.activeTextEditor;
-      if (activeTextEditor) {
-        updateDecorationsForUri(activeTextEditor.document.uri);
-      }
+      updateDecorationsForActiveEditor();
     }
   );
 
@@ -64,11 +54,8 @@ export function activate(context: vscode.ExtensionContext) {
   );
 
   vscode.window.onDidChangeActiveTextEditor(
-    (textEditor) => {
-      if (textEditor === undefined) {
-        return;
-      }
-      updateDecorationsForUri(textEditor.document.uri);
+    () => {
+      updateDecorationsForActiveEditor();
     },
     null,
     context.subscriptions
@@ -77,12 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
   function onChangedDiagnostics(
     diagnosticChangeEvent: vscode.DiagnosticChangeEvent
   ) {
-    if (!vscode.window) {
-      return;
-    }
-
-    const activeTextEditor: vscode.TextEditor | undefined =
-      vscode.window.activeTextEditor;
+    const activeTextEditor = vscode.window.activeTextEditor;
     if (!activeTextEditor) {
       return;
     }
@@ -95,54 +77,32 @@ export function activate(context: vscode.ExtensionContext) {
     }
   }
 
-  function updateDecorationsForUri(uriToDecorate: vscode.Uri) {
-    if (!uriToDecorate) {
-      return;
-    }
-
-    if (uriToDecorate.scheme !== "file") {
-      return;
-    }
-
-    if (!vscode.window) {
-      return;
-    }
-
-    const activeTextEditor: vscode.TextEditor | undefined =
-      vscode.window.activeTextEditor;
+  function updateDecorationsForActiveEditor() {
+    const activeTextEditor = vscode.window.activeTextEditor;
     if (!activeTextEditor) {
       return;
     }
 
-    if (!activeTextEditor.document.uri.fsPath) {
+    updateDecorationsForUri(activeTextEditor.document.uri);
+  }
+
+  function updateDecorationsForUri(uriToDecorate: vscode.Uri) {
+    if (!uriToDecorate || uriToDecorate.scheme !== "file") {
       return;
     }
 
+    const diagnostics = vscode.languages.getDiagnostics(uriToDecorate);
     let numErrors = 0;
     let numWarnings = 0;
 
     if (errorLensEnabled) {
-      let aggregatedDiagnostics: any = {};
-      let diagnostic: vscode.Diagnostic;
-
-      for (diagnostic of vscode.languages.getDiagnostics(uriToDecorate)) {
-        let key = "line" + diagnostic.range.start.line;
-
-        if (aggregatedDiagnostics[key]) {
-          aggregatedDiagnostics[key].arrayDiagnostics.push(diagnostic);
-        } else {
-          aggregatedDiagnostics[key] = {
-            line: diagnostic.range.start.line,
-            arrayDiagnostics: [diagnostic],
-          };
-        }
-
+      for (const diagnostic of diagnostics) {
         switch (diagnostic.severity) {
-          case 0:
+          case vscode.DiagnosticSeverity.Error:
             numErrors += 1;
             break;
 
-          case 1:
+          case vscode.DiagnosticSeverity.Warning:
             numWarnings += 1;
             break;
         }
@@ -170,68 +130,35 @@ class CustomSidebarViewProvider implements vscode.WebviewViewProvider {
       localResourceRoots: [this._extensionUri],
     };
 
-    webviewView.webview.html = this.getHtmlContent0(webviewView.webview);
-
     setInterval(() => {
-      let errors = getNumErrors();
-      if (errors === 0) {
-        webviewView.webview.html = this.getHtmlContent0(webviewView.webview);
-      } else if (errors < 5) {
-        webviewView.webview.html = this.getHtmlContent1(webviewView.webview);
-      } else if (errors < 10) {
-        webviewView.webview.html = this.getHtmlContent2(webviewView.webview);
-      } else {
-        webviewView.webview.html = this.getHtmlContent3(webviewView.webview);
-      }
+      const errors = getNumErrors();
+      const face = this.getFace(errors);
+      webviewView.webview.html = this.getHtmlContent(webviewView.webview, face);
     }, 1000);
   }
 
-  private getHtmlContent0(webview: vscode.Webview): string {
-    const stylesheetUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "assets", "main.css")
-    );
-
-    const face0 = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "assets", "incredible0.png")
-    );
-
-    return getHtml(face0);
+  private getFace(errors: number): string {
+    if (errors === 0) {
+      return "incredible0.png";
+    } else if (errors < 5) {
+      return "incredible1.png";
+    } else if (errors < 10) {
+      return "incredible2.png";
+    } else {
+      return "incredible3.png";
+    }
   }
 
-  private getHtmlContent1(webview: vscode.Webview): string {
+  private getHtmlContent(webview: vscode.Webview, face: string): string {
     const stylesheetUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this._extensionUri, "assets", "main.css")
     );
 
-    const face1 = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "assets", "incredible1.png")
+    const imageUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this._extensionUri, "assets", face)
     );
 
-    return getHtml(face1);
-  }
-
-  private getHtmlContent2(webview: vscode.Webview): string {
-    const stylesheetUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "assets", "main.css")
-    );
-
-    const face2 = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "assets", "incredible2.png")
-    );
-
-    return getHtml(face2);
-  }
-
-  private getHtmlContent3(webview: vscode.Webview): string {
-    const stylesheetUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "assets", "main.css")
-    );
-
-    const face3 = webview.asWebviewUri(
-      vscode.Uri.joinPath(this._extensionUri, "assets", "incredible3.png")
-    );
-
-    return getHtml(face3);
+    return getHtml(imageUri);
   }
 }
 
@@ -239,53 +166,44 @@ function getHtml(doomFace: any) {
   return `
     <!DOCTYPE html>
 			<html lang="en">
-			<head>
-
-			</head>
-
 			<body>
 			<section class="wrapper">
-      <img class="doomFaces" src="${doomFace}" alt="" >
-      <h1 id="errorNum">${getNumErrors() + " errors"}</h1>
+        <img class="doomFaces" src="${doomFace}" alt="" >
+        <h1 id="errorNum">${getNumErrors() + " errors"}</h1>
 			</section>
       </body>
-
 		</html>
   `;
 }
 
 function getNumErrors(): number {
-  const activeTextEditor: vscode.TextEditor | undefined =
-    vscode.window.activeTextEditor;
+  const activeTextEditor = vscode.window.activeTextEditor;
   if (!activeTextEditor) {
     return 0;
   }
-  const document: vscode.TextDocument = activeTextEditor.document;
+  const document = activeTextEditor.document;
 
   let numErrors = 0;
   let numWarnings = 0;
 
-  let aggregatedDiagnostics: any = {};
-  let diagnostic: vscode.Diagnostic;
+  const aggregatedDiagnostics = new Map<number, vscode.Diagnostic[]>();
 
-  for (diagnostic of vscode.languages.getDiagnostics(document.uri)) {
-    let key = "line" + diagnostic.range.start.line;
+  for (const diagnostic of vscode.languages.getDiagnostics(document.uri)) {
+    const { severity, range } = diagnostic;
+    const key = range.start.line;
 
-    if (aggregatedDiagnostics[key]) {
-      aggregatedDiagnostics[key].arrayDiagnostics.push(diagnostic);
+    if (aggregatedDiagnostics.has(key)) {
+      aggregatedDiagnostics.get(key)?.push(diagnostic);
     } else {
-      aggregatedDiagnostics[key] = {
-        line: diagnostic.range.start.line,
-        arrayDiagnostics: [diagnostic],
-      };
+      aggregatedDiagnostics.set(key, [diagnostic]);
     }
 
-    switch (diagnostic.severity) {
-      case 0:
+    switch (severity) {
+      case vscode.DiagnosticSeverity.Error:
         numErrors += 1;
         break;
 
-      case 1:
+      case vscode.DiagnosticSeverity.Warning:
         numWarnings += 1;
         break;
     }
