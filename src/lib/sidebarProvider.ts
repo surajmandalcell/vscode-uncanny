@@ -3,7 +3,7 @@ import getErrors from "./getErrors";
 import { getHtml } from "./utils";
 
 class CustomSidebarViewProvider implements vscode.WebviewViewProvider {
-  public static readonly viewType = "uncanny-mrincredible.openview";
+  public static readonly viewType = "vscode-uncanny.openview";
 
   private _view?: vscode.WebviewView;
 

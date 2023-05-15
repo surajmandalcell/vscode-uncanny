@@ -1,14 +1,14 @@
 {
-  "name": "uncanny-mrincredible",
+  "name": "vscode-uncanny",
   "displayName": "Uncanny Mr. Incredible",
   "description": "In Your Face, shows you Incredible 'Uncanny Faces' that correlate to the number of errors in your code!",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "surajmandalcell",
   "homepage": "https://github.com/surajmandalcell",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/surajmandalcell/uncanny-mrincredible"
+    "url": "https://github.com/surajmandalcell/vscode-uncanny"
   },
   "engines": {
     "vscode": "^1.61.0"
@@ -34,10 +34,6 @@
   "__metadata": {
     "publisherDisplayName": "surajmandalcell"
   },
-  "activationEvents": [
-    "onCommand:uncanny-mrincredible.openview.focus",
-    "onView:uncanny-mrincredible.openview"
-  ],
   "main": "./out/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -53,7 +49,7 @@
       "custom-activitybar": [
         {
           "type": "webview",
-          "id": "uncanny-mrincredible.openview",
+          "id": "vscode-uncanny.openview",
           "name": "In Your Face",
           "contextualTitle": "In Your Face"
         }
@@ -61,7 +57,7 @@
     },
     "commands": [
       {
-        "command": "uncanny-mrincredible.openview.focus",
+        "command": "vscode-uncanny.openview.focus",
         "category": "In Your Face",
         "title": "Open Sidebar",
         "icon": "$(clear-all)"
